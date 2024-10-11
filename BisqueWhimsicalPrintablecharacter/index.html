@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard</title>
+    <style>
+        /* 기본 페이지 스타일 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 전체 레이아웃 설정 */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 입력 섹션 스타일 */
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            margin-right: 40px;
+        }
+
+        h2 {
+            font-size: 22px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        /* 입력 필드 스타일 */
+        #studentIdInput, #scoreInput {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px 0;
+            width: 220px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* 버튼 스타일 */
+        button {
+            font-size: 18px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* 스코어보드 컨테이너 스타일 */
+        #scoreboard-container {
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        /* 스코어보드 스타일 */
+        #scoreboard {
+            font-size: 20px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 300px;
+            text-align: left;
+        }
+
+        .score-item {
+            margin: 5px 0;
+            font-size: 20px;
+        }
+
+        /* 하위 점수 스타일 */
+        #lowerScores {
+            margin-top: 20px;
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-section">
+            <h2>Score Input</h2>
+            <input type="text" id="studentIdInput" placeholder="학번 입력 (최대 5자리)" maxlength="5" />
+            <input type="number" id="scoreInput" placeholder="점수 입력" />
+            <button id="updateButton">Add Score</button>
+        </div>
+        <div id="scoreboard-container">
+            <h1>Scoreboard</h1>
+            <div id="scoreboard">점수가 없습니다.</div>
+            <div id="lowerScores" style="display: none;">
+                <div id="lowerScoresList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 학번과 점수를 저장할 배열 생성
+        let scores = [];
+
+        // "Add Score" 버튼 클릭 이벤트
+        document.getElementById("updateButton").addEventListener("click", function() {
+            // 학번과 점수를 입력받음
+            let studentId = document.getElementById("studentIdInput").value;
+            let score = document.getElementById("scoreInput").value;
+
+            // 입력된 값이 유효한지 확인한 후 배열에 추가
+            if (studentId !== '' && score !== '' && !isNaN(score) && studentId.length <= 5) {
+                // 기존 학번 점수 업데이트 또는 추가
+                let existingIndex = scores.findIndex(entry => entry.id === studentId);
+                if (existingIndex !== -1) {
+                    // 기존 점수가 더 낮으면 점수 업데이트
+                    if (scores[existingIndex].score < Number(score)) {
+                        scores[existingIndex].score = Number(score);
+                    }
+                } else {
+                    // 새로운 점수 추가
+                    scores.push({ id: studentId, score: Number(score) });
+                }
+
+                // 입력 필드 초기화
+                document.getElementById("studentIdInput").value = '';
+                document.getElementById("scoreInput").value = '';
+
+                // 점수를 기준으로 내림차순 정렬
+                scores.sort(function(a, b) {
+                    return b.score - a.score;
+                });
+
+                // 스코어보드를 업데이트
+                updateScoreboard();
+            } else {
+                alert("유효한 학번(최대 5자리)과 숫자를 입력하세요!");
+            }
+        });
+
+        // 스코어보드를 업데이트하는 함수
+        function updateScoreboard() {
+            const scoreboard = document.getElementById("scoreboard");
+            const lowerScoresList = document.getElementById("lowerScoresList");
+            const lowerScoresSection = document.getElementById("lowerScores");
+
+            // 스코어보드를 초기화
+            scoreboard.innerHTML = '';
+            lowerScoresList.innerHTML = '';
+            lowerScoresSection.style.display = 'none'; // 기본적으로 하위 점수 섹션을 숨김
+
+            // 배열이 비어 있으면 "점수가 없습니다." 표시
+            if (scores.length === 0) {
+                scoreboard.textContent = "점수가 없습니다.";
+            } else {
+                // 배열을 순회하며 상위 3개 점수 표시
+                scores.slice(0, 3).forEach(function(entry, index) {
+                    const scoreItem = document.createElement('div');
+                    scoreItem.classList.add('score-item');
+                    scoreItem.textContent = `${index + 1}. 학번: ${entry.id} - 점수: ${entry.score}`;
+                    scoreboard.appendChild(scoreItem);
+                });
+
+                // 3등 이후의 점수를 표시
+                if (scores.length > 3) {
+                    lowerScoresSection.style.display = 'block'; // 하위 점수 섹션을 보임
+                    scores.slice(3).forEach(function(entry) {
+                        const lowerScoreItem = document.createElement('div');
+                        lowerScoreItem.classList.add('score-item');
+                        lowerScoreItem.textContent = `학번: ${entry.id} - 점수: ${entry.score}`;
+                        lowerScoresList.appendChild(lowerScoreItem);
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
